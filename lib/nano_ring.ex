@@ -78,7 +78,7 @@ defmodule NanoRing do
     if Set.member?(oldring.node_set,node(from)) and not Set.member?(oldring.up_set,node(from)), do:
        new_up_set = new_up_set |> Set.put(node(from))
     new_node_set = Set.union(ring.node_set,oldring.node_set)
-    if new_node_set==oldring.node_set, do: File.write!(ring_path,new_node_set|>term_to_binary)
+    if new_node_set !== oldring.node_set, do: File.write!(ring_path,new_node_set|>term_to_binary)
     {:noreply,Ring[up_set: new_up_set,node_set: new_node_set]}
   end
   def handle_cast({:node_down,n},ring) do # call when a call timeout
