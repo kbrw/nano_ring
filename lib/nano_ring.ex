@@ -77,9 +77,10 @@ defmodule NanoRing do
     new_up_set = Set.union(ring.up_set,oldring.up_set)
     if Set.member?(oldring.node_set,node(from)) and not Set.member?(oldring.up_set,node(from)), do:
        new_up_set = new_up_set |> Set.put(node(from))
-    new_node_set = Set.union(ring.node_set,oldring.node_set)
-    if new_node_set !== oldring.node_set, do: File.write!(ring_path,new_node_set|>term_to_binary)
-    {:noreply,Ring[up_set: new_up_set,node_set: new_node_set]}
+    newring = Ring[up_set: new_up_set,node_set: Set.union(ring.node_set,oldring.node_set)]
+    if newring.node_set !== oldring.node_set, do: File.write!(ring_path,newring.node_set|>term_to_binary)
+    if newring !== oldring, do: :gen_event.notify(NanoRing.Events,{:newring,oldring,newring})
+    {:noreply,newring}
   end
   def handle_cast({:node_down,n},ring) do # call when a call timeout
     {:noreply,ring.update_up_set(fn(s)->s |> Set.delete(n) end)}
@@ -100,16 +101,12 @@ defmodule NanoRing do
   def handle_call(:get_all,_from,ring), do: {:reply,ring.node_set,ring}
   def handle_call(:get_up,_from,ring), do: {:reply,ring.up_set,ring}
 
-  defp ring_path do
+  defp ring_path, do:
       "#{:application.get_env(:nano_ring,:data_dir,"./data")}/ring"
-  end
 end
 
 defmodule NanoRing.App do
   use Application.Behaviour
-  @moduledoc """
-  The application launch only the ring manager
-  """
   def start(_type,_args) do
     :supervisor.start_link(NanoRing.App.Sup,[])
   end
@@ -117,6 +114,7 @@ defmodule NanoRing.App do
     use Supervisor.Behaviour
     def init([]) do
       supervise([
+        worker(:gen_event,[{:local,NanoRing.Events}], id: NanoRing.Events),
         worker(NanoRing,[])
       ], strategy: :one_for_one)
     end
