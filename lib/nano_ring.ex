@@ -76,7 +76,7 @@ defmodule NanoRing do
     from <- {ref,:is_up}
     new_up_set = Set.union(ring.up_set,oldring.up_set)
     if Set.member?(oldring.node_set,node(from)) and not Set.member?(oldring.up_set,node(from)), do:
-       new_up_set = new_up_set |> Set.put(node(from))
+      new_up_set = new_up_set |> Set.put(node(from))
     newring = Ring[up_set: new_up_set,node_set: Set.union(ring.node_set,oldring.node_set)]
     if newring.node_set !== oldring.node_set, do: File.write!(ring_path,newring.node_set|>term_to_binary)
     if newring !== oldring, do: :gen_event.notify(NanoRing.Events,{:newring,oldring,newring})
