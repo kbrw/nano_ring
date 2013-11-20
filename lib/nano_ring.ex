@@ -49,6 +49,19 @@ defmodule NanoRing do
     end
   end
 
+  def update_ring(old_ring,new_ring) do
+    case {old_ring.up_set|>Enum.reduce(HashSet.new,&Set.put(&2,&1)),new_ring.up_set|>Enum.reduce(HashSet.new,&Set.put(&2,&1))} do
+      {unchanged,unchanged}->:nothingtodo
+      {old_up_set,new_up_set}->:gen_event.notify(NanoRing.Events,{:new_up_set,old_up_set,new_up_set})
+    end
+    case {old_ring.node_set|>Enum.reduce(HashSet.new,&Set.put(&2,&1)),new_ring.node_set|>Enum.reduce(HashSet.new,&Set.put(&2,&1))} do
+      {unchanged,unchanged}->:nothingtodo
+      {old_node_set,new_node_set}->:gen_event.notify(NanoRing.Events,{:new_node_set,old_node_set,new_node_set})
+    end
+    if new_ring.node_set !== old_ring.node_set, do: File.write!(ring_path,new_ring.node_set|>term_to_binary)
+    new_ring
+  end
+
   def handle_info(:send_gossip, Ring[node_set: node_set,up_set: up_set]=ring) do
     :erlang.send_after(1000,self(),:send_gossip)
     if not Set.member?(node_set,node()), do: :erlang.send_after(5000,self(),:halt_node)
@@ -61,7 +74,7 @@ defmodule NanoRing do
         receive do 
           {^ref,:is_up} ->{:noreply,ring} 
         after 
-          1000 -> {:noreply,ring.up_set(up_set|>Set.delete(random_node))} 
+          1000 -> {:noreply,update_ring(ring,ring.up_set(up_set|>Set.delete(random_node)))} 
         end
     end
   end
@@ -77,24 +90,18 @@ defmodule NanoRing do
     new_up_set = Set.union(ring.up_set,oldring.up_set)
     if Set.member?(oldring.node_set,node(from)) and not Set.member?(oldring.up_set,node(from)), do:
       new_up_set = new_up_set |> Set.put(node(from))
-    newring = Ring[up_set: new_up_set,node_set: Set.union(ring.node_set,oldring.node_set)]
-    if newring.node_set !== oldring.node_set, do: File.write!(ring_path,newring.node_set|>term_to_binary)
-    if newring !== oldring, do: :gen_event.notify(NanoRing.Events,{:newring,oldring,newring})
-    {:noreply,newring}
-  end
-  def handle_cast({:node_down,n},ring) do # call when a call timeout
-    {:noreply,ring.update_up_set(fn(s)->s |> Set.delete(n) end)}
+    {:noreply,update_ring(oldring,Ring[up_set: new_up_set,node_set: Set.union(ring.node_set,oldring.node_set)])}
   end
   def handle_cast({:add_node,n},Ring[up_set: old_up_set,node_set: old_node_set]=ring) do
     case old_node_set |> Set.member? n do
       true -> {:noreply,ring}
-      false -> {:noreply,Ring[up_set: old_up_set |> Set.put(n) ,node_set: old_node_set |> Set.put(n)]}
+      false -> {:noreply,update_ring(ring,Ring[up_set: old_up_set |> Set.put(n) ,node_set: old_node_set |> Set.put(n)])}
     end
   end
   def handle_cast({:del_node,n},Ring[up_set: old_up_set,node_set: old_node_set]=ring) do
     case old_node_set |> Set.member? n do
       false -> {:noreply,ring}
-      true -> {:noreply,Ring[up_set: old_up_set,node_set: old_node_set |> Set.delete(n)]}
+      true -> {:noreply,update_ring(ring,Ring[up_set: old_up_set,node_set: old_node_set |> Set.delete(n)])}
     end
   end
 
