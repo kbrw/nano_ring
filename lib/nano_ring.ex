@@ -74,7 +74,7 @@ defmodule NanoRing do
         receive do 
           {^ref,:is_up} ->{:noreply,ring} 
         after 
-          1000 -> {:noreply,update_ring(ring,ring.up_set(up_set|>Set.delete(random_node)))} 
+          100 -> {:noreply,update_ring(ring,ring.up_set(up_set|>Set.delete(random_node)))} 
         end
     end
   end
