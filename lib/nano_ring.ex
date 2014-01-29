@@ -26,7 +26,7 @@ defrecord LWWElemSet, add_set: HashSet.new(), rem_set: HashSet.new()  do
           rem_set|>Enum.sort(&(&1 > &2))|>Enum.uniq(fn {v,_ts}->v end)
         },acc,fun)
     end
-    def member?(set,e), do: set |> Enum.any?(&(&1==e))
+    def member?(set,e), do: { :ok, set |> Enum.any?(&(&1==e)) }
     def count(set), do: set |> Enum.count(fn(_)->true end)
   end
   defimpl Inspect, for: LWWElemSet do
