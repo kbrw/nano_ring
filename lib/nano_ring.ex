@@ -86,7 +86,7 @@ defmodule NanoRing do
   end
 
   def handle_cast({:reconcile,ring,from,ref},oldring) do
-    from <- {ref,:is_up}
+    send from, {ref,:is_up}
     new_up_set = Set.union(ring.up_set,oldring.up_set)
     if Set.member?(oldring.node_set,node(from)) and not Set.member?(oldring.up_set,node(from)), do:
       new_up_set = new_up_set |> Set.put(node(from))
