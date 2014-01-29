@@ -26,7 +26,7 @@ defrecord LWWElemSet, add_set: HashSet.new(), rem_set: HashSet.new()  do
           rem_set|>Enum.sort(&(&1 > &2))|>Enum.uniq(fn {v,_ts}->v end)
         },acc,fun)
     end
-    def member?(set,e), do: set |> Enum.any?(&(&1==e))
+    def member?(set,e), do: { :ok, set |> Enum.any?(&(&1==e)) }
     def count(set), do: set |> Enum.count(fn(_)->true end)
   end
   defimpl Inspect, for: LWWElemSet do
@@ -86,7 +86,7 @@ defmodule NanoRing do
   end
 
   def handle_cast({:reconcile,ring,from,ref},oldring) do
-    from <- {ref,:is_up}
+    send from, {ref,:is_up}
     new_up_set = Set.union(ring.up_set,oldring.up_set)
     if Set.member?(oldring.node_set,node(from)) and not Set.member?(oldring.up_set,node(from)), do:
       new_up_set = new_up_set |> Set.put(node(from))

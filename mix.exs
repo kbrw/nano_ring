@@ -4,7 +4,7 @@ defmodule SaEautomation.Mixfile do
   def project do
     [ app: :nano_ring,
       version: "0.0.1",
-      elixir: "~> 0.11.0",
+      elixir: "~> 0.12.2",
       deps: [],
       ## dev multi nodes configs
       dev1_config: [nano_ring: [data_dir: "./dev1_data"]],
