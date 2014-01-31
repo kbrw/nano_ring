@@ -52,7 +52,16 @@ defmodule NanoRing do
     end
   end
 
-  def update_ring(old_ring,new_ring) do
+  def all, do: :gen_server.call(__MODULE__, :get_all)
+  def up, do: :gen_server.call(__MODULE__, :get_up)
+
+  def add_node(node) when is_binary(node), do: add_node(binary_to_atom(node))
+  def add_node(node) when is_atom(node), do: :gen_server.cast(__MODULE__, { :add_node, node })
+
+  def del_node(node) when is_binary(node), do: del_node(binary_to_atom(node))
+  def del_node(node) when is_atom(node), do: :gen_server.cast(__MODULE__, { :del_node, node })
+
+  defp update_ring(old_ring,new_ring) do
     case {old_ring.up_set|>Enum.reduce(HashSet.new,&Set.put(&2,&1)),new_ring.up_set|>Enum.reduce(HashSet.new,&Set.put(&2,&1))} do
       {unchanged,unchanged}->:nothingtodo
       {old_up_set,new_up_set}->:gen_event.notify(NanoRing.Events,{:new_up_set,old_up_set,new_up_set})
