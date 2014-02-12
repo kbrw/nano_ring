@@ -47,7 +47,7 @@ defmodule NanoRing do
   def init(_) do
     :erlang.send_after(1000,self(),:send_gossip)
     case File.read(ring_path) do
-        {:ok,bin} -> {:ok,Ring[node_set: binary_to_term(bin),up_set: binary_to_term(bin)]}
+        {:ok,bin} -> {:ok,Ring[node_set: :erlang.binary_to_term(bin),up_set: :erlang.binary_to_term(bin)]}
         _ -> {:ok,Ring[node_set: LWWElemSet[] |> LWWElemSet.put(node()),up_set: LWWElemSet[] |> LWWElemSet.put(node())] }
     end
   end
@@ -70,7 +70,7 @@ defmodule NanoRing do
       {unchanged,unchanged}->:nothingtodo
       {old_node_set,new_node_set}->:gen_event.notify(NanoRing.Events,{:new_node_set,old_node_set,new_node_set})
     end
-    if new_ring.node_set !== old_ring.node_set, do: File.write!(ring_path,new_ring.node_set|>term_to_binary)
+    if new_ring.node_set !== old_ring.node_set, do: File.write!(ring_path,new_ring.node_set|>:erlang.term_to_binary)
     new_ring
   end
 
