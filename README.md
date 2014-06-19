@@ -40,7 +40,7 @@ will remove it from their `up_set`.
 
 First you can create 4 node launching either `make multi_start` if you use
 xterm, it will launch 4 terms with erlang nodes named
-`nano_ring_dev[1,2,3,4]@127.0.0.1` running `NanoRing.App`.
+`dev[1,2,3,4]@127.0.0.1` running `NanoRing.App`.
 
 If you cannot use xterm, you can create your own 4 terminal and
 launch `make start_dev[1-4]` on each one.
