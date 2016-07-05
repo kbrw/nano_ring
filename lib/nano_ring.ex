@@ -10,27 +10,27 @@ defmodule NanoRing do
   def init(_) do
     :erlang.send_after(1000,self(),:send_gossip)
     case File.read(ring_path) do
-        {:ok,bin} ->
-          set = :erlang.binary_to_term(bin)
-          monitor(get_set(set))
-          {:ok,
-          %NanoRing{
-            # TODO: restore counter
-            node_set: set,
-            up_set: MapSet.new(get_set(set)),
-            payload: Crdtex.Map.new,
-            counter: 0}
-          }
-        _ ->
-          set = Crdtex.Set.new
-          {:ok, set} = add(set, {node(), 1}, node())
-          {:ok,
-           %NanoRing{
-             node_set: set,
-             up_set: MapSet.new([node()]),
-             payload: Crdtex.Map.new,
-             counter: 1}
-          }
+      {:ok,bin} ->
+        set = :erlang.binary_to_term(bin)
+        monitor(get_set(set))
+        {:ok,
+         %NanoRing{
+          # TODO: restore counter
+          node_set: set,
+          up_set: MapSet.new(get_set(set)),
+          payload: Crdtex.Map.new,
+          counter: 0}
+        }
+      _ ->
+        set = Crdtex.Set.new
+        {:ok, set} = add(set, {node(), 1}, node())
+        {:ok,
+         %NanoRing{
+          node_set: set,
+          up_set: MapSet.new([node()]),
+          payload: Crdtex.Map.new,
+          counter: 1}
+        }
     end
   end
 
