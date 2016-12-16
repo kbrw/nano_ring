@@ -4,7 +4,7 @@ defmodule SaEautomation.Mixfile do
   def project do
     [ app: :nano_ring,
       version: "0.0.3",
-      elixir: "~> 1.2",
+      elixir: "~> 1.3",
       deps: [{:crdtex, "0.0.1", git: "git://github.com/awetzel/crdtex"}]
     ]
   end
