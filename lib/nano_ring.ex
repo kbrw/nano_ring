@@ -81,7 +81,7 @@ defmodule NanoRing do
     case up_set |> Set.delete(node()) |> Set.to_list do
       [] -> {:noreply,ring}
       active_nodes ->
-        random_node = Enum.at(active_nodes,:random.uniform(length(active_nodes))-1)
+        random_node = Enum.at(active_nodes,:rand.uniform(length(active_nodes))-1)
         ref = make_ref()
         :gen_server.cast({__MODULE__,random_node},{:reconcile,ring,self(),ref})
         receive do 
