@@ -99,7 +99,7 @@ defmodule NanoRing do
       [] -> {:noreply,ring}
       active_nodes ->
         random_node =
-          Enum.at(active_nodes, :random.uniform(length(active_nodes)) - 1)
+          Enum.at(active_nodes, :rand.uniform(length(active_nodes)) - 1)
         :gen_server.cast({__MODULE__, random_node},
           {:reconcile, %{node_set: node_set, payload: ring.payload, from_node: [node()]}})
       {:noreply, ring}
