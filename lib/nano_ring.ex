@@ -7,9 +7,9 @@ defmodule LWWElemSet do
   """
   defstruct add_set: HashSet.new, rem_set: HashSet.new
   def put(set,e), do:
-    %{set| add_set: set.add_set|>Set.put({e,:erlang.now()})}
+    %{set| add_set: set.add_set|>Set.put({e,:erlang.timestamp()})}
   def delete(set,e), do:
-    %{set| rem_set: set.rem_set|>Set.put({e,:erlang.now()})}
+    %{set| rem_set: set.rem_set|>Set.put({e,:erlang.timestamp()})}
   def union(%LWWElemSet{add_set: add_set1,rem_set: rem_set1},%LWWElemSet{add_set: add_set2,rem_set: rem_set2}), do:
     %LWWElemSet{add_set: Set.union(add_set1,add_set2),rem_set: Set.union(rem_set1,rem_set2)}
 
@@ -101,18 +101,21 @@ defmodule NanoRing do
   def handle_cast({:reconcile,ring,from,ref},oldring) do
     send from, {ref,:is_up}
     new_up_set = Set.union(ring.up_set,oldring.up_set)
-    if Set.member?(oldring.node_set,node(from)) and not Set.member?(oldring.up_set,node(from)), do:
-      new_up_set = new_up_set |> Set.put(node(from))
+    new_up_set = if Set.member?(oldring.node_set,node(from)) and not Set.member?(oldring.up_set,node(from)) do
+       Set.put(new_up_set,node(from))
+    else
+      new_up_set
+    end
     {:noreply,update_ring(oldring,%NanoRing{up_set: new_up_set,node_set: Set.union(ring.node_set,oldring.node_set)})}
   end
   def handle_cast({:add_node,n},%NanoRing{up_set: old_up_set,node_set: old_node_set}=ring) do
-    case old_node_set |> Set.member? n do
+    case Set.member?(old_node_set,n) do
       true -> {:noreply,ring}
       false -> {:noreply,update_ring(ring,%NanoRing{up_set: old_up_set|>Set.put(n),node_set: old_node_set|>Set.put(n)})}
     end
   end
   def handle_cast({:del_node,n},%NanoRing{up_set: old_up_set,node_set: old_node_set}=ring) do
-    case old_node_set |> Set.member? n do
+    case Set.member?(old_node_set,n) do
       false -> {:noreply,ring}
       true -> {:noreply,update_ring(ring,%NanoRing{up_set: old_up_set,node_set: old_node_set |> Set.delete(n)})}
     end
