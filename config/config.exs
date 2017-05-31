@@ -1,5 +1,5 @@
 use Mix.Config
-sname = "#{node}" |> String.split("@") |> hd
+sname = "#{node()}" |> String.split("@") |> hd
 
 if sname != "nonode" do
   import_config "#{sname}.exs"
