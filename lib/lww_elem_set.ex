@@ -98,6 +98,8 @@ defmodule LWWElemSet do
     def member?(_s, _e), do: {:error, __MODULE__}
 
     def count(_set), do: {:error, __MODULE__}
+
+    def slice(_set), do: {:error, __MODULE__}
   end
 
   defimpl Inspect, for: LWWElemSet do
