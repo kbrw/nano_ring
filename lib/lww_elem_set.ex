@@ -86,12 +86,13 @@ defmodule LWWElemSet do
     def count(_set), do: {:error, __MODULE__}
   end
 
-  # defimpl Inspect, for: LWWElemSet do
-  #   def inspect(set, opts) do
-  #     content = Enum.map(set, &Inspect.Algebra.to_doc(&1, opts)) |> Enum.join(",")
-  #     "%LWWElemSet{#{content}}"
-  #   end
-  # end
+  defimpl Inspect, for: LWWElemSet do
+    import Inspect.Algebra
+    
+    def inspect(set, opts) do
+      concat(["%LWWElemSet<", to_doc(LWWElemSet.to_list(set), opts), ">"])
+    end
+  end
   
   defdelegate member?(set, e), to: Enum
   
