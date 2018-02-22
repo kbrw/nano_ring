@@ -20,7 +20,7 @@ defmodule LWWElemSet do
       3
   """
   @spec new([any]) :: t
-  def new(elems \\ []) do
+  def new(elems \\ []) when is_list(elems) do
     acc = %__MODULE__{}
     Enum.reduce(elems, acc, &(put(&2, &1)))
   end

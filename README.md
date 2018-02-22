@@ -3,12 +3,11 @@ nano_ring
 
 NanoRing is a very very small Cluster management System in Elixir.
 
-NanoRing needs only Elixir 0.11. It uses a simple gossip protocol to 
-share the ring state without a master node. The 2 sets containing the
-ring state (all nodes and up nodes) are made convergent with a
-LWW-element-set state-based CRDT
-(http://hal.upmc.fr/docs/00/55/55/88/PDF/techreport.pdf ).
-The LWW-element-set containing all nodes is persistent and written on
+It uses a simple gossip protocol to share the ring state without a
+master node. The 2 sets containing the ring state (all nodes and up
+nodes) are made convergent with a LWW-element-set state-based CRDT
+(http://hal.upmc.fr/docs/00/55/55/88/PDF/techreport.pdf ).  The
+LWW-element-set containing all nodes is persistent and written on
 disk.
 
 ## How does it work ? ##
@@ -30,11 +29,11 @@ the chosen node from its "up-set".
 The whole cluster node set is persisted on-disk on each node, saved
 on cluster change. The up node set is initialized with all nodes.
 
-When a node is removed (cast`:del_node`), remove it from the
-`node_set` but not from the `up_set` to allow the gossip propagates the
-ring. When a node see that it is not in its current cluster, delete
-its ring file and exit the node after 10 seconds, so that all node
-will remove it from their `up_set`.
+When a node is removed (cast `:del_node`), remove it from the
+`node_set` but not from the `up_set` to allow the gossip propagates
+the ring. When a node see that it is not in its current cluster,
+delete its ring file and exit the node after 10 seconds, so that all
+node will remove it from their `up_set`.
 
 ## How to test Nano Ring ##
 
@@ -50,20 +49,33 @@ launch `make start_dev[1-4]` on each one.
 By default, each node is in a ring containing only itself. To join
 another node, use for instance on `nano_ring_dev1`:
 
-    :gen_server.cast(NanoRing,{:add_node,:"nano_ring_dev2@127.0.0.1"})
+```elixir
+NanoRing.add_node(:"nano_ring_dev2@127.0.0.1")
+```
 
 If you want to remove a node, use :
 
-    :gen_server.cast(NanoRing,{:del_node,:"nano_ring_dev2@127.0.0.1"})
+```elixir
+NanoRing.del_node(:"nano_ring_dev2@127.0.0.1")
+```
 
 and wait 10 seconds.
 
 In order to see the evolution of the cluster, you can see the whole
 cluster with :
 
-    :gen_server.call(NanoRing,:get_all)
+```elixir
+NanoRing.get_all()
+```
 
 To observe the available nodes of the cluster, you can use :
 
-    :gen_server.call(NanoRing,:get_up)
+```elixir
+NanoRing.get_up()
+```
 
+## License
+
+nano_ring source code is released under Apache 2 License.
+
+Check the [LICENSE](LICENSE) file for more information.
