@@ -6,16 +6,57 @@ defmodule LWWElemSet do
   All reads are done through a reduce function and Enum module
   """
   
-  defstruct add_set: MapSet.new, rem_set: MapSet.new
-  
-  def put(set, e) do
-    %{ set | add_set: set.add_set() |> MapSet.put({e, :erlang.timestamp()})}
+  defstruct add_set: MapSet.new(), rem_set: MapSet.new()
+
+  @typedoc "Structure used to describe a Last-Write-Win element set"
+  @type t :: %__MODULE__{}
+
+  @doc """
+  Add element to the set
+
+  ## Examples
+
+      iex> (s = LWWElemSet.put(LWWElemSet.put(%LWWElemSet{}, :ok), :ok); Enum.count(s))
+      1
+
+      iex> (s = LWWElemSet.put(LWWElemSet.put(%LWWElemSet{}, :one), :two); Enum.count(s))
+      2
+  """
+  @spec put(t, any) :: t
+  def put(%__MODULE__{ add_set: add_set }=set, e) do
+    %{ set | add_set: MapSet.put(add_set, {e, :erlang.timestamp()})}
   end
-  
-  def delete(set, e) do
-    %{ set | rem_set: set.rem_set() |> MapSet.put({e, :erlang.timestamp()})}
+
+  @doc """
+  Remove element from set
+
+  BUG: a delete right after a put may not remove the value. Check
+  :erlang.timestamp precision issue ?
+
+  ## Examples
+
+      iex> (s = LWWElemSet.delete(LWWElemSet.put(%LWWElemSet{}, :ok), :ok); Enum.count(s))
+      0
+
+      iex> (s = LWWElemSet.delete(LWWElemSet.put(%LWWElemSet{}, :ok), :not_present); Enum.count(s))
+      1
+  """
+  @spec delete(t, any) :: t
+  def delete(%__MODULE__{ rem_set: rem_set }=set, e) do
+    %{ set | rem_set: MapSet.put(rem_set, {e, :erlang.timestamp()})}
   end
-  
+
+  @doc """
+  Returns a set containing all members of set1, and set2
+
+  ## Examples
+
+      iex> (s = LWWElemSet.union(LWWElemSet.put(%LWWElemSet{}, :one), LWWElemSet.put(%LWWElemSet{}, :two)); Enum.count(s))
+      2
+
+      iex> (s = LWWElemSet.union(LWWElemSet.put(%LWWElemSet{}, :one), LWWElemSet.put(%LWWElemSet{}, :one)); Enum.count(s))
+      1
+  """
   def union(%LWWElemSet{add_set: add_set1, rem_set: rem_set1}, %LWWElemSet{add_set: add_set2, rem_set: rem_set2}) do
     %LWWElemSet{add_set: MapSet.union(add_set1, add_set2), rem_set: MapSet.union(rem_set1, rem_set2)}
   end
@@ -41,18 +82,18 @@ defmodule LWWElemSet do
     def reduce(s, acc, fun), do: reduce(s, {:cont, acc}, fun)
 
     def member?(_s, _e), do: {:error, __MODULE__}
-    
-    def count(set), do: set |> Enum.count(fn(_) -> true end)
+
+    def count(_set), do: {:error, __MODULE__}
   end
 
-  defimpl Inspect, for: LWWElemSet do
-    def inspect(set, opts) do
-      content = set |> Enum.map(&Inspect.Algebra.to_doc(&1, opts)) |> Enum.join(",")
-      "%LWWElemSet{#{content}}"
-    end
-  end
+  # defimpl Inspect, for: LWWElemSet do
+  #   def inspect(set, opts) do
+  #     content = Enum.map(set, &Inspect.Algebra.to_doc(&1, opts)) |> Enum.join(",")
+  #     "%LWWElemSet{#{content}}"
+  #   end
+  # end
   
-  def member?(set, e), do: set |> Enum.member?(e)
+  defdelegate member?(set, e), to: Enum
   
-  def to_list(set), do: set |> Enum.to_list
+  defdelegate to_list(set), to: Enum
 end
