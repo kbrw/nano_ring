@@ -12,6 +12,20 @@ defmodule LWWElemSet do
   @type t :: %__MODULE__{}
 
   @doc """
+  Creates a new `LWWElemSet` with given elements
+
+  ## Examples
+
+      iex> LWWElemSet.new([:un, :deux, :un, :trois]) |> Enum.count()
+      3
+  """
+  @spec new([any]) :: t
+  def new(elems \\ []) do
+    acc = %__MODULE__{}
+    Enum.reduce(elems, acc, &(put(&2, &1)))
+  end
+
+  @doc """
   Add element to the set
 
   ## Examples
