@@ -12,8 +12,7 @@ defmodule NanoRing.App do
     def init([]) do
       supervise([
         worker(:gen_event,[{:local,NanoRing.Events}], id: NanoRing.Events),
-        worker(NanoRing,[]),
-        worker(Repl, [])
+        worker(NanoRing,[])
       ], strategy: :one_for_one)
     end
   end
