@@ -1,9 +1,9 @@
 defmodule NanoRing do
   @moduledoc """
-  Manages nodes ring  
+  Manages nodes ring
   """
   use GenServer
-  
+
   defstruct node_set: %LWWElemSet{}, up_set: %LWWElemSet{}
 
   @typedoc "Structure to maintain nodes list (global, up)"
@@ -45,10 +45,10 @@ defmodule NanoRing do
 
   ###
   ### GenServer callbacks
-  ###  
+  ###
   @doc false
   def init(_) do
-    :erlang.send_after(1000, self(), :send_gossip)
+    :erlang.send_after(Application.get_env(:nano_ring, :gossip_after, 1000), self(), :send_gossip)
     s = case File.read(ring_path()) do
 	  {:ok, bin} ->
 	    %NanoRing{node_set: :erlang.binary_to_term(bin), up_set: :erlang.binary_to_term(bin)}
@@ -60,8 +60,8 @@ defmodule NanoRing do
 
   @doc false
   def handle_info(:send_gossip, %NanoRing{node_set: node_set, up_set: up_set}=ring) do
-    :erlang.send_after(1000, self(), :send_gossip)
-    
+    :erlang.send_after(Application.get_env(:nano_ring, :gossip_after, 1000), self(), :send_gossip)
+
     if not LWWElemSet.member?(node_set,node()), do: :erlang.send_after(5000, self(), :halt_node)
 
     case up_set |> LWWElemSet.delete(node()) |> LWWElemSet.to_list() do
@@ -70,12 +70,11 @@ defmodule NanoRing do
         random_node = Enum.at(active_nodes, :rand.uniform(length(active_nodes)) - 1)
         ref = make_ref()
         :gen_server.cast({__MODULE__, random_node}, {:reconcile, ring, self(), ref})
-        receive do 
-          {^ref, :is_up} -> {:noreply, ring} 
-        after 
-          100 ->
-	    ring = update_ring(ring, %{ring | up_set: LWWElemSet.delete(up_set, random_node)})
-	    {:noreply, ring}
+        receive do
+          {^ref, :is_up} -> {:noreply, ring}
+        after Application.get_env(:nano_ring, :die_after, 100) ->
+	        ring = update_ring(ring, %{ring | up_set: LWWElemSet.delete(up_set, random_node)})
+	        {:noreply, ring}
         end
     end
   end
@@ -89,7 +88,7 @@ defmodule NanoRing do
   @doc false
   def handle_cast({:reconcile, ring, from, ref}, oldring) do
     send from, {ref, :is_up}
-    
+
     new_up_set = LWWElemSet.union(ring.up_set, oldring.up_set)
     new_up_set = if LWWElemSet.member?(oldring.node_set, node(from)) and not LWWElemSet.member?(oldring.up_set, node(from)) do
        LWWElemSet.put(new_up_set, node(from))
@@ -101,23 +100,25 @@ defmodule NanoRing do
       %NanoRing{up_set: new_up_set, node_set: LWWElemSet.union(ring.node_set, oldring.node_set)})
     {:noreply, ring}
   end
+
   def handle_cast({:add_node, n}, %NanoRing{up_set: old_up_set, node_set: old_node_set}=ring) do
     case LWWElemSet.member?(old_node_set, n) do
       true ->
-	{:noreply, ring}
+	      {:noreply, ring}
       false ->
-	ring = update_ring(ring,
-	  %NanoRing{up_set: LWWElemSet.put(old_up_set, n), node_set: LWWElemSet.put(old_node_set, n)})
-	{:noreply, ring}
+        ring = update_ring(ring,
+          %NanoRing{up_set: LWWElemSet.put(old_up_set, n), node_set: LWWElemSet.put(old_node_set, n)})
+	      {:noreply, ring}
     end
   end
+
   def handle_cast({:del_node,n},%NanoRing{up_set: old_up_set, node_set: old_node_set}=ring) do
     case LWWElemSet.member?(old_node_set, n) do
       false ->
-	{:noreply, ring}
+	      {:noreply, ring}
       true ->
-	ring = update_ring(ring, %NanoRing{up_set: old_up_set, node_set: LWWElemSet.delete(old_node_set, n)})
-	{:noreply, ring}
+	      ring = update_ring(ring, %NanoRing{up_set: old_up_set, node_set: LWWElemSet.delete(old_node_set, n)})
+	      {:noreply, ring}
     end
   end
 
@@ -140,11 +141,11 @@ defmodule NanoRing do
     if old_node_set != new_node_set do
       :gen_event.notify(NanoRing.Events, {:new_node_set, old_node_set, new_node_set})
     end
-    
+
     if new_ring.node_set !== old_ring.node_set do
       dump_state(new_ring)
     end
-    
+
     new_ring
   end
 
