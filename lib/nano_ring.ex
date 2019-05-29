@@ -3,6 +3,7 @@ defmodule NanoRing do
   Manages nodes ring
   """
   use GenServer
+  require Logger
 
   defstruct node_set: %LWWElemSet{}, up_set: %LWWElemSet{}
 
