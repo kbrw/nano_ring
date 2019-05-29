@@ -49,6 +49,7 @@ defmodule NanoRing do
   ###
   @doc false
   def init(_) do
+    Logger.debug("NanoRing: Using config: gossip_after=#{Application.get_env(:nano_ring, :gossip_after, 1000)} |  die_after=#{Application.get_env(:nano_ring, :die_after, 100)}")
     :erlang.send_after(Application.get_env(:nano_ring, :gossip_after, 1000), self(), :send_gossip)
     s = case File.read(ring_path()) do
     {:ok, bin} ->

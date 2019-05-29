@@ -13,7 +13,7 @@ defmodule SaEautomation.Mixfile do
 
   def application do
     [ mod: { NanoRing.App,[] },
-      applications: [:iex],
+      applications: [:iex, :logger],
       env: [ data_dir: "./data" ] ]
   end
 
