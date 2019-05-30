@@ -76,7 +76,7 @@ defmodule NanoRing do
         receive do
           {^ref, :is_up} -> {:noreply, ring}
         after Application.get_env(:nano_ring, :die_after, 100) ->
-          Logger.debug("NanoRing: Node #{inspect random_node} did not answer in time ! Considering it dead.")
+          Logger.debug("NanoRing: Node #{inspect random_node} did not answer in time (#{Application.get_env(:nano_ring, :die_after, 100)}ms)! Considering it dead.")
           ring = update_ring(ring, %{ring | up_set: LWWElemSet.delete(up_set, random_node)})
           Logger.debug("NanoRing: New ring is #{inspect ring}")
 	        {:noreply, ring}
