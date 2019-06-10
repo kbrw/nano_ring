@@ -3,6 +3,7 @@ defmodule NanoRing.App do
   NanoRing application entry point
   """
   use Application
+
   def start(_type,_args) do
     :supervisor.start_link(NanoRing.App.Sup,[])
   end

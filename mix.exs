@@ -3,7 +3,7 @@ defmodule SaEautomation.Mixfile do
 
   def project do
     [ app: :nano_ring,
-      version: "0.0.3",
+      version: "0.0.4",
       elixir: ">= 1.3.0",
       deps: deps(),
       docs: docs(),
@@ -13,7 +13,7 @@ defmodule SaEautomation.Mixfile do
 
   def application do
     [ mod: { NanoRing.App,[] },
-      applications: [:iex],
+      applications: [:iex, :logger],
       env: [ data_dir: "./data" ] ]
   end
 
