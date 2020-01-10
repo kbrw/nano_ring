@@ -5,7 +5,7 @@ defmodule LWWElemSet do
   Write are done by simple unions of the 2 add and remove sets
   All reads are done through a reduce function and Enum module
   """
-  
+
   defstruct add_set: MapSet.new(), rem_set: MapSet.new()
 
   @typedoc "Structure used to describe a Last-Write-Win element set"
@@ -80,9 +80,9 @@ defmodule LWWElemSet do
     def reduce({:lwwlists, [{v_add, ts_add} | add_list], rem_list}, {:cont, acc}, fun) do
       case rem_list |> Enum.find(fn {v_rem, _} -> v_rem==v_add end) do
         {_, ts_rem} when ts_rem > ts_add ->
-	  reduce({:lwwlists, add_list, rem_list}, acc, fun)
-	_ ->
-	  reduce({:lwwlists, add_list, rem_list}, fun.(v_add, acc), fun)
+	        reduce({:lwwlists, add_list, rem_list}, acc, fun)
+	      _ ->
+	        reduce({:lwwlists, add_list, rem_list}, fun.(v_add, acc), fun)
       end
     end
     def reduce(%LWWElemSet{add_set: add_set, rem_set: rem_set}, {:cont, acc}, fun) do
@@ -104,13 +104,13 @@ defmodule LWWElemSet do
 
   defimpl Inspect, for: LWWElemSet do
     import Inspect.Algebra
-    
+
     def inspect(set, opts) do
       concat(["%LWWElemSet<", to_doc(LWWElemSet.to_list(set), opts), ">"])
     end
   end
-  
+
   defdelegate member?(set, e), to: Enum
-  
+
   defdelegate to_list(set), to: Enum
 end
