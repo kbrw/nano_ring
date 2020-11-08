@@ -3,7 +3,7 @@ defmodule SaEautomation.Mixfile do
 
   def project do
     [ app: :nano_ring,
-      version: "0.0.3",
+      version: "1.0.0",
       elixir: ">= 1.10.0",
       deps: deps(),
       docs: docs(),
