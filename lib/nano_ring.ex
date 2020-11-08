@@ -1,4 +1,18 @@
 defmodule NanoRing do
+  defmodule Events do
+    def child_spec(_) do Registry.child_spec(keys: :duplicate, name: __MODULE__) end
+  
+    @dispatch_key :events
+    def dispatch(ev) do
+      Registry.dispatch(__MODULE__, @dispatch_key, fn entries ->
+        for {pid, nil} <- entries, do: send(pid,{:node_event,ev})
+      end)
+    end
+    def register do
+      {:ok, _} = Registry.register(__MODULE__,@dispatch_key,nil)
+    end
+  end
+
   @moduledoc """
   Manages nodes ring  
   """
@@ -12,8 +26,8 @@ defmodule NanoRing do
   @doc """
   Start nodes manager
   """
-  @spec start_link() :: GenServer.on_start
-  def start_link do
+  @spec start_link(term) :: GenServer.on_start
+  def start_link(_) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
@@ -132,13 +146,13 @@ defmodule NanoRing do
     old_up_set = Enum.reduce(old_ring.up_set, MapSet.new(), &MapSet.put(&2, &1))
     new_up_set = Enum.reduce(new_ring.up_set, MapSet.new(), &MapSet.put(&2, &1))
     if old_up_set != new_up_set do
-      :gen_event.notify(NanoRing.Events, {:new_up_set, old_up_set, new_up_set})
+      Events.dispatch({:new_up_set, old_up_set, new_up_set})
     end
 
     old_node_set = Enum.reduce(old_ring.node_set, MapSet.new(), &MapSet.put(&2, &1))
     new_node_set = Enum.reduce(new_ring.node_set, MapSet.new(), &MapSet.put(&2, &1))
     if old_node_set != new_node_set do
-      :gen_event.notify(NanoRing.Events, {:new_node_set, old_node_set, new_node_set})
+      Events.dispatch({:new_node_set, old_node_set, new_node_set})
     end
     
     if new_ring.node_set !== old_ring.node_set do
